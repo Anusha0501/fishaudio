@@ -4,7 +4,7 @@ import path from "node:path";
 import type { Character } from "../src/engine/types.ts";
 import { estimateUsd, utf8Bytes } from "../src/engine/credits.ts";
 
-const cacheDir = path.resolve(".cache/tts");
+const cacheDir = process.env.VERCEL ? path.join("/tmp", "booth-tts") : path.resolve(".cache/tts");
 const inflight = new Map<string, Promise<Buffer>>();
 
 export class FishError extends Error {

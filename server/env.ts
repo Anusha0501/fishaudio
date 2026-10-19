@@ -14,7 +14,7 @@ export function loadEnv(file = ".env"): void {
   }
 }
 
-const MODELS = new Set(["s2.1-pro-free", "s2.1-pro", "s2-pro"]);
+const MODELS = new Set(["s2.1-pro-free", "s2.1-pro", "s2-pro", "drama-3"]);
 
 export function fishModel(): string {
   const requested = process.env.FISH_MODEL?.trim() || "s2.1-pro-free";

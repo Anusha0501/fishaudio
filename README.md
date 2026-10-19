@@ -1,89 +1,122 @@
 # Booth
 
-Say it plain. Send it in character.
+Booth is a two-chair conversation for Dunder Mifflin Scranton. A person speaks in their own words. The other chair hears Michael Scott, Dwight Schrute, Jim Halpert, or Pam Beesly: the same meaning, that character's rhythm, and one signature line when the words call for it. Fish Audio speaks the result.
 
-Booth is a two-chair conversation. You talk the way you talk. The other person hears a character: the same meaning, that character’s rhythm, and a signature line when your words brush the phrase that calls it. Fish Audio speaks the result.
+The Office and these characters belong to their owners. This project is a personal prototype. It uses the characters' names and a few of their habits. The audio uses public Fish Audio narrators, not the actors.
 
-**Idea: 8.2 / 10.** The comic habit is an immediate hook. The piece worth keeping is the switch itself — one thought, another mouth, as text and as voice, in both directions. Celebrity impersonation would make it smaller and legally shaky, so the cast is original and the voices are public Fish Audio narrators. Reggie Dunn, the regional manager, keeps the famous “that’s what she said” habit without borrowing anyone’s real voice.
+## Architecture
 
-## What a line does
+```mermaid
+flowchart LR
+  subgraph browser [Browser]
+    Draft[Draft and microphone]
+    Engine[Character engine]
+    Preview[Preview]
+    Transcript[Transcript]
+  end
 
-```
-You, in your chair                         Them, in the other chair
-type or talk
-        │
-        ▼
-Web Speech  ──transcript──►  the draft you can still edit
-        │
-        ▼
-Character engine, in the browser, $0
-  keep the meaning
-  season the rhythm
-  if a watched word or phrase is there, land one signature
-        │
-        ├── preview: "They hear" updates before you send
-        ▼
-Transcript for both chairs
-  the character line, the original tucked underneath
-        │
-        ▼
-POST /api/speak          only if Speak is on
-  server restyles again and calls Fish Audio
-  identical lines are cached, so a replay is free
-        │
-        ▼
-mp3 in that character's public voice
-the other chair hears it too
+  subgraph server [Booth server]
+    Rooms[Room API]
+    Speak[Speak API]
+    Cache[Audio cache]
+  end
+
+  Fish[Fish Audio TTS]
+
+  Draft --> Engine --> Preview
+  Engine --> Transcript
+  Transcript --> Rooms
+  Rooms --> Transcript
+  Transcript --> Speak
+  Speak --> Cache
+  Cache --> Fish
+  Fish --> Cache
+  Speak --> Transcript
 ```
 
-Open the other chair with the link in the composer. It is the same room, the other seat. Lines sync about once a second. The first play calls Fish Audio; the second chair hits the cache.
+| Piece | Responsibility |
+| --- | --- |
+| Character engine | Runs in the browser and again on the server. Keeps the meaning, adjusts the rhythm, and appends at most one signature. |
+| Preview | Shows the rewritten line before a request is made. |
+| Room API | Shares the transcript between the two chairs. Polls about once a second. |
+| Speak API | Maps a character to a public voice, calls Fish Audio, and returns MP3. The API key never reaches the browser. |
+| Audio cache | Stores a performance by model, voice, and text. A second play, including the other chair, does not call Fish again. |
 
-## The cast
+### Data flow
 
-| Character | Habit | Public voice |
-| --- | --- | --- |
-| Reggie Dunn, regional manager | “That’s what she said.” when a plain word can hold the joke | [Energetic Male](https://fish.audio/m/9a9cf47702da476aa4629e2506d4a857) |
-| Vera Vale, night detective | “The city keeps the receipt.” | [British female narrator](https://fish.audio/m/89f41ea230034706881f85a8227d6ab9) |
-| Captain Ivo, ferry captain | “Steady. The dock will still be there.” | [Deep British Narrator](https://fish.audio/m/1ca5d32c6b9f432db87be6fdbca86bfd) |
-| Lumen Park, overnight host | A dedication, or “And that is the record.” | [Energetic Female Announcer](https://fish.audio/m/9cf30df1a9b34666983695dc6fc338d2) |
+1. The active chair types, or the browser speech recognizer fills the draft. Recognition stays on the device.
+2. The character engine rewrites the draft. The preview updates on each keystroke.
+3. Send stores the original sentence and the character line, then publishes them to the room.
+4. The other chair receives the same line on its next poll.
+5. If Speak is on, the browser asks the server to synthesize the original sentence for that character. The server rewrites it again, so the spoken line matches the engine rather than a client-supplied script.
+6. Fish Audio Drama 3 returns the audio. The browser plays it. A cache hit returns the stored MP3 and a cost of zero.
 
-“Take the character off” sends the line unchanged, still spoken if you want it heard.
+## Cast
 
-Try, as Reggie: `This quarterly report is really hard.`
+| Character | Role | Signature | Public voice |
+| --- | --- | --- | --- |
+| Michael Scott | Regional Manager | "That's what she said." | [Adrian](https://fish.audio/m/bf322df2096a46f18c579d0baa36f41d) |
+| Dwight Schrute | Assistant Regional Manager | "False." | [Deep Calm Narrator](https://fish.audio/m/319010b746ea48fe8137531bb52caa49) |
+| Jim Halpert | Sales | "Yeah, so that happened." | [Energetic Male](https://fish.audio/m/9a9cf47702da476aa4629e2506d4a857) |
+| Pam Beesly | Reception | "Dunder Mifflin, this is Pam." | [Delia](https://fish.audio/m/c70cfb98867a4bfb9ae20d2401257b92) |
 
-## The $20
+"Take the character off" sends the sentence unchanged.
 
-Restyling never calls an API. Speech uses `s2.1-pro-free` by default, which is $0. A paid switch is one line in `.env`:
+Michael Scott watches ordinary words such as "hard", "long", and "come in". Dwight Schrute answers a wrong fact with "False." and a late report with "That is your emergency, not mine." Jim Halpert marks a meeting. Pam Beesly answers from reception.
 
-```bash
-FISH_MODEL=s2.1-pro
+A useful first line, as Michael Scott:
+
+```text
+This quarterly report is really hard.
 ```
 
-`s2.1-pro` is $15 per million UTF-8 bytes. $20 covers about 1.33 million bytes, roughly sixteen hours of speech. The booth also:
+## Credits
 
-- shows the rewrite before any audio is requested
-- speaks only when Speak is on
-- caches each performance on disk, and collapses two chairs asking for the same line into one Fish call
-- uses the browser’s speech recognition for the mic, so transcription does not spend the balance
+Rewriting a line does not call Fish Audio. Speech uses Drama 3, which takes the same text-to-speech request and follows acting directions in the script. The listed price is $10 per million UTF-8 bytes, so a $20 balance covers about two million characters. Set `FISH_MODEL` in `.env` to `s2.1-pro-free` to spend nothing, or to `s2.1-pro` for the $15 model.
 
-The header shows what this browser session has sent to a paid model.
+The header shows the spend recorded in this browser. Repeated lines are served from the disk cache. The microphone uses the browser's speech recognizer, so transcription is not billed.
 
-## Run it
+## Hosting
+
+The page is a Vite build. `/api` runs as Vercel functions that import the same handlers as the local Express server. Set `FISH_API_KEY` and `FISH_MODEL=drama-3` in the Vercel project. Do not commit the key.
+
+Rooms and the MP3 cache stay in the function instance. A quiet visit usually keeps both chairs on that instance. A fresh instance starts an empty room and calls Fish again for a line it has not spoken.
+
+## Development
+
+Requirements: Node.js 20 or newer, and a Fish Audio API key if the paid or free Fish voices should speak. Without a key, the rewrite still runs and speech falls back to the browser voice.
 
 ```bash
 cp .env.example .env
-# put a Fish Audio key in FISH_API_KEY if you want the real voices
 npm install
 npm test
 npm run dev
 ```
 
-Open http://127.0.0.1:5173 . Without a key, the rewrite still works and speech falls back to the browser voice.
+Open http://127.0.0.1:5173. The composer shows a link for the other chair.
 
-`npm run build && npm start` serves the production build.
+```bash
+npm run build
+npm start
+```
 
-## Layout
+`npm start` serves the production build.
 
-- `src/engine` — characters, the rewrite, and the credit math. Tested, shared by the page and the server.
-- `src/App.tsx` — the booth: two chairs, preview, mic, transcript.
-- `server` — Fish Audio proxy, audio cache, and the room the other chair joins. The API key stays here.
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `src/engine` | Characters, rewrite rules, demo scene, and credit math. Covered by unit tests. Imported by the page and the server. |
+| `src/App.tsx` | Two chairs, cast, preview, microphone, and transcript. |
+| `server` | Health, rooms, Fish Audio proxy, and the MP3 cache. |
+| `api` | Vercel function entry points for the same handlers. |
+
+## API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Reports whether a key is configured, and which model will be used. |
+| `POST` | `/api/rooms` | Opens a room. |
+| `GET` | `/api/rooms/:id` | Returns messages after an optional cursor. |
+| `POST` | `/api/rooms/:id/messages` | Stores one line after rewriting it. |
+| `POST` | `/api/speak` | Returns MP3 for a character and an original sentence. |

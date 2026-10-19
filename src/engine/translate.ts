@@ -19,7 +19,7 @@ type Styled = {
 
 const MAX_INPUT = 500;
 
-const REGGIE_RULES: Rule[] = [
+const MICHAEL_RULES: Rule[] = [
   { id: "come-in", label: "come in", pattern: /\bcome in\b/i, line: "That's what she said.", when: "always" },
   {
     id: "went-long",
@@ -42,70 +42,53 @@ const REGGIE_RULES: Rule[] = [
   { id: "handle", label: "handle", pattern: /\bhandle\b/i, line: "That's what she said.", when: "short-or-intense" },
   { id: "finish", label: "finish", pattern: /\bfinish(?:ed)?\b/i, line: "That's what she said.", when: "short-or-intense" },
   { id: "coming", label: "coming", pattern: /\bcoming\b/i, line: "That's what she said.", when: "short-or-intense" },
-  { id: "heart", label: "the team", pattern: /\b(?:team|staff|everyone)\b/i, line: "I mean that from the heart.", when: "always" },
+  { id: "friend", label: "the team", pattern: /\b(?:team|staff|everyone)\b/i, line: "I am a friend first, and a boss second.", when: "always" },
 ];
 
-const VERA_RULES: Rule[] = [
-  { id: "secret", label: "a secret", pattern: /\b(?:secret|lie|lied|missing)\b/i, line: "The city keeps the receipt.", when: "always" },
-  { id: "money", label: "money", pattern: /\b(?:money|cash|paid|payment)\b/i, line: "The city keeps the receipt.", when: "always" },
-  { id: "late", label: "late", pattern: /\b(?:late|delay|delayed)\b/i, line: "The city keeps the receipt.", when: "always" },
-  { id: "who", label: "who", pattern: /\b(?:who|why)\b/i, line: "The city keeps the receipt.", when: "always" },
+const DWIGHT_RULES: Rule[] = [
+  { id: "title", label: "his title", pattern: /\bassistant to the\b/i, line: "Assistant Regional Manager.", when: "always" },
+  { id: "farm", label: "the farm", pattern: /\b(?:bears?|beets?|farm)\b/i, line: "Bears. Beets. Battlestar Galactica.", when: "always" },
+  { id: "false", label: "false", pattern: /\b(?:false|wrong|incorrect)\b/i, line: "False.", when: "always" },
+  { id: "security", label: "security", pattern: /\b(?:security|fire|thief|steal|danger)\b/i, line: "Identity theft is not a joke.", when: "always" },
+  { id: "late", label: "late", pattern: /\b(?:late|deadline)\b/i, line: "That is your emergency, not mine.", when: "always" },
 ];
 
-const IVO_RULES: Rule[] = [
-  {
-    id: "late",
-    label: "the clock",
-    pattern: /\b(?:late|deadline|hurry|hurried|soon)\b/i,
-    line: "Steady. The dock will still be there.",
-    when: "always",
-  },
-  {
-    id: "trouble",
-    label: "trouble",
-    pattern: /\b(?:problem|broken|fail|failed|failure|crash|danger|stuck)\b/i,
-    line: "We don't panic on my deck.",
-    when: "always",
-  },
+const JIM_RULES: Rule[] = [
+  { id: "prank", label: "Dwight", pattern: /\b(?:dwight|stapler|prank)\b/i, line: "His stapler might be in Jell-O.", when: "always" },
+  { id: "meeting", label: "the meeting", pattern: /\b(?:meeting|conference|agenda)\b/i, line: "Yeah, so that happened.", when: "always" },
 ];
 
-const LUMEN_RULES: Rule[] = [
-  {
-    id: "dedication",
-    label: "a dedication",
-    pattern: /\b(?:song|songs|love|miss|heart|dedicate|dedication|tonight)\b/i,
-    line: "This one goes out to the people still awake.",
-    when: "always",
-  },
+const PAM_RULES: Rule[] = [
+  { id: "art", label: "art", pattern: /\b(?:art|draw|drawing|paint|painting)\b/i, line: "I went to art school. Sort of.", when: "always" },
+  { id: "desk", label: "reception", pattern: /\b(?:phone|call|hold|reception|desk)\b/i, line: "Can you hold for one second?", when: "always" },
 ];
 
-const REGGIE_SWAPS: Swap[] = [
-  [/^(?:hey|hi|hello)[.!]?$/i, "Hey. Welcome to the branch"],
+const MICHAEL_SWAPS: Swap[] = [
+  [/^(?:hey|hi|hello)[.!]?$/i, "Hey. Welcome to Dunder Mifflin"],
   [/\bi think\b/gi, "here's the thing, I think"],
   [/\bsorry\b/gi, "don't be sorry"],
   [/^(?:yes|yeah|yep)[.!]?$/i, "Absolutely"],
   [/^(?:no|nope)[.!]?$/i, "I'm gonna stop you right there"],
 ];
 
-const VERA_SWAPS: Swap[] = [
-  [/^(?:hey|hi|hello)[.!]?$/i, "You found the office. Most people don't"],
-  [/^(?:yes|yeah|yep)[.!]?$/i, "That's the shape of it"],
-  [/^(?:no|nope)[.!]?$/i, "Not from where I'm standing"],
-  [/\bi don't know\b/gi, "The file is thin on that"],
-  [/\bsorry\b/gi, "Save the apology"],
+const DWIGHT_SWAPS: Swap[] = [
+  [/^(?:hey|hi|hello)[.!]?$/i, "Dwight Schrute. Assistant Regional Manager"],
+  [/^(?:yes|yeah|yep)[.!]?$/i, "Correct"],
+  [/^(?:no|nope)[.!]?$/i, "False"],
+  [/\bi don't know\b/gi, "Then you should not be speaking"],
 ];
 
-const IVO_SWAPS: Swap[] = [
-  [/^(?:hey|hi|hello)[.!]?$/i, "Station's open. State your heading"],
-  [/^(?:yes|yeah|yep)[.!]?$/i, "Logged"],
-  [/^(?:no|nope)[.!]?$/i, "Negative"],
-  [/\bthank(?:s| you)\b/gi, "Noted, with thanks"],
+const JIM_SWAPS: Swap[] = [
+  [/^(?:hey|hi|hello)[.!]?$/i, "Hey. Jim Halpert"],
+  [/^(?:yes|yeah|yep)[.!]?$/i, "Yeah"],
+  [/^(?:no|nope)[.!]?$/i, "I'm gonna have to say no"],
 ];
 
-const LUMEN_SWAPS: Swap[] = [
-  [/^(?:hey|hi|hello)[.!]?$/i, "You're live on the overnight"],
-  [/^(?:yes|yeah|yep)[.!]?$/i, "That's a yes from the booth"],
-  [/^(?:no|nope)[.!]?$/i, "Not on this frequency"],
+const PAM_SWAPS: Swap[] = [
+  [/^(?:hey|hi|hello)[.!]?$/i, "Dunder Mifflin, this is Pam"],
+  [/^(?:yes|yeah|yep)[.!]?$/i, "Sure"],
+  [/^(?:no|nope)[.!]?$/i, "I don't think so"],
+  [/\bthank(?:s| you)\b/gi, "No problem. I'm at reception"],
 ];
 
 export function guard(raw: string): string {
@@ -170,69 +153,69 @@ function script(
 ): string {
   if (id === "plain") return closer ? join(body, closer) : body;
 
-  const catchphrase = Boolean(hit && hit.id !== "heart");
+  const joke = id === "michael" && Boolean(hit && hit.id !== "friend");
   const lead =
-    id === "reggie"
-      ? catchphrase
-        ? "[excited]"
-        : "[friendly]"
-      : id === "vera"
-        ? "[calm]"
-        : id === "ivo"
-          ? "[confident]"
-          : "[excited]";
+    id === "michael"
+      ? joke
+        ? "[eager American office manager, smiling, talking to the whole branch]"
+        : "[warm American office manager, sincere, a little too much]"
+      : id === "dwight"
+        ? "[flat, certain, no smile, correcting a subordinate]"
+        : id === "jim"
+          ? "[dry, relaxed, slightly amused, as if glancing at a camera]"
+          : "[warm, polite receptionist, clear and unhurried]";
 
-  const closerTag =
-    id === "reggie" && catchphrase
-      ? "[chuckling]"
-      : id === "vera" && hit
-        ? "[quiet]"
-        : id === "ivo" && hit
-          ? "[calm]"
-          : id === "lumen" && closer
-            ? "[delighted]"
-            : "";
-
-  if (!closer) return `${lead} ${body}`.trim();
-  const tail = [closerTag, closer].filter(Boolean).join(" ");
-  if (/[?!]$/.test(body)) return `${lead} ${body} [break] ${tail}`.trim();
+  const directed = closer ? directCloser(id, closer, hit) : null;
+  if (!directed) return `${lead} ${body}`.trim();
+  if (/[?!]$/.test(body)) return `${lead} ${body} [short pause] ${directed}`.trim();
   const bare = body.replace(/[.…]+$/, "");
-  return `${lead} ${bare}. [break] ${tail}`.trim();
+  return `${lead} ${bare}. [short pause] ${directed}`.trim();
 }
 
-function styleReggie(text: string): Styled {
-  const hit = pick(text, REGGIE_RULES);
+function directCloser(id: string, closer: string, hit: TriggerHit | null): string {
+  if (id === "michael" && hit && hit.id !== "friend") {
+    return "[a short delighted laugh, like he just heard his own joke] <emphasis>That's what she said.</emphasis>";
+  }
+  if (id === "michael") return `[warm, meaning every word] ${closer}`;
+  if (id === "dwight") return `[sharper, as if correcting the record] <emphasis>${closer}</emphasis>`;
+  if (id === "jim") return `[deadpan, almost under his breath] ${closer}`;
+  return `[gentle, still at the front desk] ${closer}`;
+}
+
+function styleMichael(text: string): Styled {
+  const hit = pick(text, MICHAEL_RULES);
   return {
-    body: applySwaps(text, REGGIE_SWAPS),
+    body: applySwaps(text, MICHAEL_SWAPS),
     closer: hit?.line ?? null,
     triggers: hit ? [hit] : [],
   };
 }
 
-function styleVera(text: string): Styled {
-  const hit = pick(text, VERA_RULES);
-  const closer = hit?.line ?? (text.endsWith("?") ? "Ask it once more, slower." : null);
+function styleDwight(text: string): Styled {
+  const hit = pick(text, DWIGHT_RULES);
+  const closer = hit?.line ?? (text.endsWith("?") ? "Repeat it. As a fact." : null);
   return {
-    body: applySwaps(text, VERA_SWAPS),
+    body: applySwaps(text, DWIGHT_SWAPS),
     closer,
     triggers: hit ? [hit] : [],
   };
 }
 
-function styleIvo(text: string): Styled {
-  const hit = pick(text, IVO_RULES);
+function styleJim(text: string): Styled {
+  const hit = pick(text, JIM_RULES);
+  const closer = hit?.line ?? (text.includes("!") ? "Then I look at the camera." : null);
   return {
-    body: applySwaps(text, IVO_SWAPS),
-    closer: hit?.line ?? null,
+    body: applySwaps(text, JIM_SWAPS),
+    closer,
     triggers: hit ? [hit] : [],
   };
 }
 
-function styleLumen(text: string): Styled {
-  const hit = pick(text, LUMEN_RULES);
-  const closer = hit?.line ?? (text.includes("!") ? "And that is the record." : null);
+function stylePam(text: string): Styled {
+  const hit = pick(text, PAM_RULES);
+  const closer = hit?.line ?? (text.endsWith("?") ? "Let me check." : null);
   return {
-    body: applySwaps(text, LUMEN_SWAPS),
+    body: applySwaps(text, PAM_SWAPS),
     closer,
     triggers: hit ? [hit] : [],
   };
@@ -243,10 +226,10 @@ function stylePlain(text: string): Styled {
 }
 
 const STYLES: Record<string, (text: string) => Styled> = {
-  reggie: styleReggie,
-  vera: styleVera,
-  ivo: styleIvo,
-  lumen: styleLumen,
+  michael: styleMichael,
+  dwight: styleDwight,
+  jim: styleJim,
+  pam: stylePam,
   plain: stylePlain,
 };
 

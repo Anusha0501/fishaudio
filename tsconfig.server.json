@@ -13,5 +13,5 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["server", "src/engine"]
+  "include": ["server", "api", "src/engine"]
 }

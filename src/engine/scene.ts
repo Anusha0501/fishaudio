@@ -6,26 +6,26 @@ export type SceneLine = {
   text: string;
 };
 
-/** A four-line scene that shows the catch landing, then the other chair answering. */
+/** Michael opens. Dwight answers. The catchphrase has to land twice. */
 export const DEMO_SCENE: SceneLine[] = [
   {
     seat: "you",
-    characterId: "reggie",
+    characterId: "michael",
     text: "This quarterly report is really hard.",
   },
   {
     seat: "them",
-    characterId: "vera",
-    text: "Then tell me who signed it, and why the numbers came in late.",
+    characterId: "dwight",
+    text: "Who signed this, and why are the numbers late?",
   },
   {
     seat: "you",
-    characterId: "reggie",
+    characterId: "michael",
     text: "I need the whole team to come in on Saturday.",
   },
   {
     seat: "them",
-    characterId: "vera",
-    text: "Bring the timeline. Leave the apology.",
+    characterId: "dwight",
+    text: "Those numbers are wrong.",
   },
 ];

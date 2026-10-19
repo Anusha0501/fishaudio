@@ -32,7 +32,7 @@ function money(value: number): string {
 export function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [seat, setSeat] = useState<SeatId>(initialSeat);
-  const [cast, setCast] = useState<Record<SeatId, string>>({ you: "reggie", them: "vera" });
+  const [cast, setCast] = useState<Record<SeatId, string>>({ you: "michael", them: "dwight" });
   const [messages, setMessages] = useState<BoothMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [speakOn, setSpeakOn] = useState(true);
@@ -233,7 +233,7 @@ export function App() {
   });
 
   function playScene(): void {
-    setCast({ you: "reggie", them: "vera" });
+    setCast({ you: "michael", them: "dwight" });
     setSeat("you");
     for (const line of DEMO_SCENE) deliver(line.text, line.seat, line.characterId);
   }
@@ -321,14 +321,22 @@ export function App() {
           <details className="budget">
             <summary>How the $20 is spent</summary>
             <p>
-              Restyling is free and happens in the browser. Fish Audio is called only when a line is
-              spoken. The default model, s2.1-pro-free, costs $0. The paid s2.1-pro model is $15 per
-              million characters, so $20 is about sixteen hours of speech. Repeated lines are cached.
+              Restyling stays in the browser. Speech uses Drama 3, at $10 per million characters,
+              and only when a line is spoken. A $20 balance covers about two million characters.
+              Repeated lines are cached.
+            </p>
+          </details>
+          <details className="budget">
+            <summary>Architecture</summary>
+            <p>
+              The browser rewrites the line before anything is sent. Both chairs share that
+              transcript through the room API. Speak calls Fish Audio on the server, which keeps
+              the key and caches the audio.
             </p>
           </details>
           <p className="credit">
-            Original characters. Public narrator voices. Reggie keeps a famous comic habit without
-            borrowing a real person’s voice.
+            Michael Scott, Dwight Schrute, Jim Halpert, and Pam Beesly. Public narrator voices, not
+            the actors.
           </p>
         </aside>
 

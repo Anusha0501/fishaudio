@@ -132,9 +132,9 @@ export function browserSpeak(text: string, characterId: string, speed: number): 
   const voices = window.speechSynthesis.getVoices();
   const female = voices.find((voice) => /female|samantha|victoria|karen|moira|fiona|serena/i.test(voice.name));
   const male = voices.find((voice) => /daniel|alex|fred|rishi|male|gordon/i.test(voice.name));
-  const picked = characterId === "vera" || characterId === "lumen" ? female : male;
+  const picked = characterId === "pam" ? female : male;
   if (picked) utterance.voice = picked;
-  utterance.pitch = characterId === "ivo" ? 0.8 : characterId === "lumen" ? 1.15 : 1;
+  utterance.pitch = characterId === "dwight" ? 0.82 : characterId === "pam" ? 1.08 : 1;
   window.speechSynthesis.cancel();
   return new Promise((resolve, reject) => {
     utterance.onend = () => resolve();
