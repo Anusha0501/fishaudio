@@ -3,6 +3,7 @@ dist
 .env
 .env.local
 .vercel
+.vercel-api
 .cache
 *.mp3
 .DS_Store
