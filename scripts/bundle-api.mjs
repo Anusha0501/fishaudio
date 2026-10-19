@@ -28,7 +28,7 @@ await build({
   logLevel: "info",
 });
 
-const shim = (target: string) => `import { createRequire } from "node:module";
+const shim = (target) => `import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const bundled = require(${JSON.stringify(target)}) as {
