@@ -78,7 +78,9 @@ The header shows the spend recorded in this browser. Repeated lines are served f
 
 ## Hosting
 
-The page is a Vite build. `/api` runs as Vercel functions that import the same handlers as the local Express server. Set `FISH_API_KEY` and `FISH_MODEL=drama-3` in the Vercel project. Do not commit the key.
+The live booth is [fishaudio-sigma.vercel.app](https://fishaudio-sigma.vercel.app).
+
+The page is a Vite build. On Vercel, the build bundles `/api` into Node functions that use the same handlers as the local Express server. `FISH_API_KEY` and `FISH_MODEL=drama-3` are set in the Vercel project. Do not commit the key.
 
 Rooms and the MP3 cache stay in the function instance. A quiet visit usually keeps both chairs on that instance. A fresh instance starts an empty room and calls Fish again for a line it has not spoken.
 
