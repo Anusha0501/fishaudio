@@ -195,6 +195,39 @@ p { margin: 0; }
 }
 .empty { margin: auto; text-align: center; color: var(--ink-soft); }
 .empty-kicker { color: #8a5a28; margin-bottom: 6px; }
+.examples {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.examples > .empty-kicker { text-align: center; }
+.example {
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+  border: 0;
+  border-top: 3px solid hsl(var(--hue) 62% 46%);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.example:hover { background: white; }
+.example-label {
+  display: block;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  color: #8a5a28;
+}
+.example .said { color: var(--ink-soft); font-size: 14px; line-height: 1.4; }
+.example .heard {
+  font-family: Fraunces, Palatino, serif;
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--ink);
+}
 .bubble {
   width: min(100%, 560px);
   background: white;

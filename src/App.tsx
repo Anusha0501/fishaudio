@@ -21,6 +21,29 @@ import { useMic } from "./useMic";
 const SPEND_KEY = "booth-spend";
 const OPENED_KEY = "booth-opened";
 
+const EXAMPLES = [
+  {
+    characterId: "michael",
+    said: "I do not like this. Change it.",
+    heard: "Here’s the thing, I don’t like this. Change it.",
+  },
+  {
+    characterId: "dwight",
+    said: "Could you please check whether these numbers are wrong?",
+    heard: "Check if these numbers are wrong.",
+  },
+  {
+    characterId: "jim",
+    said: "We are about to sit through another meeting that does not matter.",
+    heard: "Another meeting we don't really need. Yeah, so that happened.",
+  },
+  {
+    characterId: "pam",
+    said: "Please wait a second, I will find that invoice for you.",
+    heard: "Sure, just a moment while I pull up that invoice for you.",
+  },
+] as const;
+
 function initialSeat(): SeatId {
   const seat = new URLSearchParams(window.location.search).get("seat");
   return seat === "them" ? "them" : "you";
@@ -78,6 +101,15 @@ export function App() {
   }, [draft, character.id]);
 
   const preview = heard?.key === draftKey && heard.line.display ? heard.line : localPreview;
+
+  function loadExample(example: (typeof EXAMPLES)[number]) {
+    setCast((current) => ({ ...current, [seat]: example.characterId }));
+    setDraft(example.said);
+    setHeard({
+      key: `${example.characterId}\n${example.said}`,
+      line: { display: example.heard, performance: example.heard, triggers: [] },
+    });
+  }
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("room");
@@ -390,9 +422,26 @@ export function App() {
 
           <div className="transcript" ref={transcriptRef}>
             {messages.length === 0 ? (
-              <div className="empty">
-                <p className="empty-kicker">{booting ? "Opening the booth" : "The booth is quiet"}</p>
-                <p>Try “{character.sample}”</p>
+              <div className="examples">
+                <p className="empty-kicker">{booting ? "Opening the booth" : "Hear the difference"}</p>
+                {EXAMPLES.map((example) => {
+                  const persona = getCharacter(example.characterId) ?? PLAIN;
+                  return (
+                    <button
+                      key={example.characterId}
+                      type="button"
+                      className="example"
+                      style={{ "--hue": String(persona.hue) } as CSSProperties}
+                      onClick={() => loadExample(example)}
+                    >
+                      <span className="empty-kicker">{persona.name}</span>
+                      <span className="example-label">You say</span>
+                      <p className="said">{example.said}</p>
+                      <span className="example-label">They hear</span>
+                      <p className="heard">{example.heard}</p>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               messages.map((message) => {
@@ -466,7 +515,15 @@ export function App() {
               >
                 {mic.supported ? (mic.hearing ? "Listening" : "Talk") : "Mic unavailable"}
               </button>
-              <button type="button" className="ghost" onClick={() => setDraft(character.sample)}>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  const example = EXAMPLES.find((item) => item.characterId === character.id);
+                  if (example) loadExample(example);
+                  else setDraft(character.sample);
+                }}
+              >
                 Try a line
               </button>
               <label className="toggle">
