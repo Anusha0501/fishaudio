@@ -36,7 +36,7 @@ function fromRules(raw: string, characterId: string): Rewrite {
 function instruction(characterId: string): string {
   const character = getCharacter(characterId);
   const brief = BRIEFS[character?.id ?? ""] ?? BRIEFS.michael;
-  return `Rewrite the user's sentence as one or two short spoken sentences. Keep the meaning. Do not add facts they did not imply. No quotation marks, labels, or stage directions. ${brief} Reply as JSON with a single "line" string.`;
+  return `Rewrite the user's sentence as one or two short spoken sentences. Keep the meaning. Do not add facts they did not imply. No quotation marks, labels, or stage directions. ${brief} Reply with only the spoken words.`;
 }
 
 async function askGroq(text: string, characterId: string, apiKey: string): Promise<string> {
@@ -50,7 +50,8 @@ async function askGroq(text: string, characterId: string, apiKey: string): Promi
     body: JSON.stringify({
       model: groqModel(),
       temperature: 0.8,
-      max_tokens: 180,
+      max_tokens: 700,
+      reasoning_effort: "low",
       messages: [
         { role: "system", content: instruction(characterId) },
         { role: "user", content: text },
@@ -109,14 +110,15 @@ async function askGemini(text: string, characterId: string, apiKey: string): Pro
 }
 
 function parseLine(raw: string): string {
+  const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   try {
-    const parsed = JSON.parse(raw) as { line?: unknown };
+    const parsed = JSON.parse(trimmed) as { line?: unknown };
     if (typeof parsed.line === "string") return cleanLine(parsed.line);
   } catch {
-    const match = raw.match(/"line"\s*:\s*"([^"]+)"/);
-    if (match?.[1]) return cleanLine(match[1]);
+    // A cut-off JSON object is not a spoken line.
   }
-  return cleanLine(raw);
+  if (trimmed.startsWith("{") || /"line"\s*:/.test(trimmed)) return "";
+  return cleanLine(trimmed);
 }
 
 async function rewriteFresh(text: string, characterId: string): Promise<Rewrite> {
