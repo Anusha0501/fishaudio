@@ -21,6 +21,8 @@ export type Character = {
   voiceId: string;
   voiceName: string;
   monogram: string;
+  /** Original illustration served from /public. Shown in place of the monogram. */
+  portrait?: string;
   /** Hue for the character's lamp and card, 0–360. */
   hue: number;
   speed: number;

@@ -357,7 +357,9 @@ export function App() {
                   style={{ "--hue": String(persona.hue) } as CSSProperties}
                   onClick={() => setCast((current) => ({ ...current, [seat]: persona.id }))}
                 >
-                  <span className="monogram">{persona.monogram}</span>
+                  <span className="monogram">
+                    {persona.portrait ? <img src={persona.portrait} alt="" width={64} height={64} /> : persona.monogram}
+                  </span>
                   <span>
                     <strong>{persona.name}</strong>
                     <em>{persona.role}</em>
@@ -591,13 +593,9 @@ function Overture({ onEnter }: { onEnter: () => void }) {
             <span>Fish Audio says it in that voice. The other chair hears the same line.</span>
           </li>
         </ol>
-        <div className="score">
-          <b>8.2</b>
-          <span>
-            The comic habit is the hook. The piece worth building is the switch: one thought, another
-            mouth, said both as text and as voice.
-          </span>
-        </div>
+        <p className="intro">
+          Say something ordinary, then hear how it lands as Michael, Dwight, Jim, or Pam.
+        </p>
         <button type="button" className="enter" onClick={onEnter}>
           Open the booth
         </button>
