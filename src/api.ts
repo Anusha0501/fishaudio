@@ -5,7 +5,7 @@ export type Health = {
   configured: boolean;
   model: string;
   pricePerMillionBytes: number;
-  writer?: "gemini" | "rules";
+  writer?: "groq" | "gemini" | "rules";
 };
 
 export class SpeakError extends Error {
@@ -71,7 +71,7 @@ export async function rewriteLine(text: string, characterId: string): Promise<Tr
     body: JSON.stringify({ text, characterId }),
   });
   if (!response.ok) return translate(text, characterId);
-  return (await response.json()) as Translation & { source?: "gemini" | "rules" };
+  return (await response.json()) as Translation & { source?: "groq" | "gemini" | "rules" };
 }
 
 const roomBoot = new Map<string, Promise<string>>();

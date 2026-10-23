@@ -1,9 +1,9 @@
 import { getCharacter } from "../src/engine/characters.ts";
 import { stageLine, translate } from "../src/engine/translate.ts";
 import type { Translation } from "../src/engine/types.ts";
-import { geminiKey, geminiModel } from "./env.ts";
+import { geminiKey, geminiModel, groqKey, groqModel } from "./env.ts";
 
-export type Rewrite = Translation & { source: "gemini" | "rules" };
+export type Rewrite = Translation & { source: "groq" | "gemini" | "rules" };
 
 const cache = new Map<string, Rewrite>();
 const inflight = new Map<string, Promise<Rewrite>>();
@@ -33,9 +33,43 @@ function fromRules(raw: string, characterId: string): Rewrite {
   return { ...translate(raw, characterId), source: "rules" };
 }
 
-async function askGemini(text: string, characterId: string, apiKey: string): Promise<string> {
+function instruction(characterId: string): string {
   const character = getCharacter(characterId);
   const brief = BRIEFS[character?.id ?? ""] ?? BRIEFS.michael;
+  return `Rewrite the user's sentence as one or two short spoken sentences. Keep the meaning. Do not add facts they did not imply. No quotation marks, labels, or stage directions. ${brief} Reply as JSON with a single "line" string.`;
+}
+
+async function askGroq(text: string, characterId: string, apiKey: string): Promise<string> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(20_000),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: groqModel(),
+      temperature: 0.8,
+      max_tokens: 180,
+      messages: [
+        { role: "system", content: instruction(characterId) },
+        { role: "user", content: text },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 180);
+    throw new Error(`Groq returned ${response.status}. ${detail}`);
+  }
+
+  const body = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  return parseLine(body.choices?.[0]?.message?.content ?? "");
+}
+
+async function askGemini(text: string, characterId: string, apiKey: string): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel())}:generateContent`,
     {
@@ -46,13 +80,7 @@ async function askGemini(text: string, characterId: string, apiKey: string): Pro
         "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [
-            {
-              text: `Rewrite the user's sentence as one or two short spoken sentences. Keep the meaning. Do not add facts they did not imply. No quotation marks, labels, or stage directions. ${brief} Reply as JSON with a single "line" string.`,
-            },
-          ],
-        },
+        systemInstruction: { parts: [{ text: instruction(characterId) }] },
         contents: [{ role: "user", parts: [{ text }] }],
         generationConfig: {
           temperature: 0.8,
@@ -77,6 +105,10 @@ async function askGemini(text: string, characterId: string, apiKey: string): Pro
     candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
   const raw = body.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+  return parseLine(raw);
+}
+
+function parseLine(raw: string): string {
   try {
     const parsed = JSON.parse(raw) as { line?: unknown };
     if (typeof parsed.line === "string") return cleanLine(parsed.line);
@@ -89,21 +121,24 @@ async function askGemini(text: string, characterId: string, apiKey: string): Pro
 
 async function rewriteFresh(text: string, characterId: string): Promise<Rewrite> {
   const fallback = fromRules(text, characterId);
-  const apiKey = geminiKey();
   const id = getCharacter(characterId)?.id ?? "plain";
-  if (!apiKey || id === "plain" || !fallback.display) return fallback;
+  if (id === "plain" || !fallback.display) return fallback;
+
+  const groq = groqKey();
+  const gemini = geminiKey();
+  if (!groq && !gemini) return fallback;
 
   try {
-    const line = await askGemini(text, id, apiKey);
+    const line = groq ? await askGroq(text, id, groq) : await askGemini(text, id, gemini as string);
     if (!line) return fallback;
     return {
       display: line,
       performance: stageLine(id, line),
       triggers: [],
-      source: "gemini",
+      source: groq ? "groq" : "gemini",
     };
   } catch (error) {
-    console.error(error instanceof Error ? error.message : "Gemini did not answer.");
+    console.error(error instanceof Error ? error.message : "The writer did not answer.");
     return fallback;
   }
 }
@@ -118,7 +153,7 @@ export function rewriteLine(text: string, characterId: string): Promise<Rewrite>
 
   const next = rewriteFresh(text, characterId).then((line) => {
     inflight.delete(key);
-    if (line.display) cache.set(key, line);
+    if (line.display && line.source !== "rules") cache.set(key, line);
     return line;
   });
   inflight.set(key, next);

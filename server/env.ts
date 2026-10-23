@@ -34,3 +34,18 @@ export function geminiKey(): string | undefined {
 export function geminiModel(): string {
   return process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
 }
+
+export function groqKey(): string | undefined {
+  const key = process.env.GROQ_API_KEY?.trim();
+  return key ? key : undefined;
+}
+
+export function groqModel(): string {
+  return process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
+}
+
+export function writerName(): "groq" | "gemini" | "rules" {
+  if (groqKey()) return "groq";
+  if (geminiKey()) return "gemini";
+  return "rules";
+}

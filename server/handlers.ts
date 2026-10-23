@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getCharacter } from "../src/engine/characters.ts";
 import { usdPerMillionBytes } from "../src/engine/credits.ts";
-import { fishKey, fishModel, geminiKey } from "./env.ts";
+import { fishKey, fishModel, writerName } from "./env.ts";
 import { acceptMessage, createRoom, getRoom, messagesAfter } from "./rooms.ts";
 import { rewriteLine } from "./rewrite.ts";
 import { FishError, synthesize } from "./tts.ts";
@@ -93,7 +93,7 @@ export function sendHealth(_req: ApiRequest, res: ApiResponse): void {
     configured: Boolean(fishKey()),
     model,
     pricePerMillionBytes: usdPerMillionBytes(model),
-    writer: geminiKey() ? "gemini" : "rules",
+    writer: writerName(),
   });
 }
 
