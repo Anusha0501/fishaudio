@@ -25,3 +25,12 @@ export function fishKey(): string | undefined {
   const key = process.env.FISH_API_KEY?.trim();
   return key ? key : undefined;
 }
+
+export function geminiKey(): string | undefined {
+  const key = process.env.GEMINI_API_KEY?.trim();
+  return key ? key : undefined;
+}
+
+export function geminiModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+}

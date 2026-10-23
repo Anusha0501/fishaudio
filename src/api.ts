@@ -1,9 +1,11 @@
-import type { BoothMessage } from "./engine/types";
+import { translate } from "./engine/translate";
+import type { BoothMessage, Translation } from "./engine/types";
 
 export type Health = {
   configured: boolean;
   model: string;
   pricePerMillionBytes: number;
+  writer?: "gemini" | "rules";
 };
 
 export class SpeakError extends Error {
@@ -22,6 +24,8 @@ export type Spoken = {
   usd: number;
   cached: boolean;
   model: string;
+  display: string;
+  writer: string;
 };
 
 export async function fetchHealth(): Promise<Health> {
@@ -55,7 +59,19 @@ export async function speakLine(text: string, characterId: string): Promise<Spok
     usd: Number(response.headers.get("X-Booth-Usd") ?? 0),
     cached: response.headers.get("X-Booth-Cached") === "hit",
     model: response.headers.get("X-Booth-Model") ?? "",
+    display: decodeURIComponent(response.headers.get("X-Booth-Display") ?? ""),
+    writer: response.headers.get("X-Booth-Writer") ?? "",
   };
+}
+
+export async function rewriteLine(text: string, characterId: string): Promise<Translation> {
+  const response = await fetch("/api/rewrite", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, characterId }),
+  });
+  if (!response.ok) return translate(text, characterId);
+  return (await response.json()) as Translation & { source?: "gemini" | "rules" };
 }
 
 const roomBoot = new Map<string, Promise<string>>();

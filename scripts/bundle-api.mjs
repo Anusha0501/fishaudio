@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 
 const entries = [
   { source: "api/health.ts", bundle: ".vercel-api/health.cjs", shimToBundle: "../.vercel-api/health.cjs" },
+  { source: "api/rewrite.ts", bundle: ".vercel-api/rewrite.cjs", shimToBundle: "../.vercel-api/rewrite.cjs" },
   { source: "api/speak.ts", bundle: ".vercel-api/speak.cjs", shimToBundle: "../.vercel-api/speak.cjs" },
   { source: "api/rooms/index.ts", bundle: ".vercel-api/rooms/index.cjs", shimToBundle: "../../.vercel-api/rooms/index.cjs" },
   { source: "api/rooms/[id].ts", bundle: ".vercel-api/rooms/[id].cjs", shimToBundle: "../../.vercel-api/rooms/[id].cjs" },

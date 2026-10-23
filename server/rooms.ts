@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { getCharacter } from "../src/engine/characters.ts";
 import { translate } from "../src/engine/translate.ts";
-import type { BoothMessage, SeatId } from "../src/engine/types.ts";
+import type { BoothMessage, SeatId, Translation } from "../src/engine/types.ts";
 
 type Room = {
   id: string;
@@ -49,7 +49,7 @@ function asSeat(value: unknown): SeatId | null {
   return value === "you" || value === "them" ? value : null;
 }
 
-export function acceptMessage(roomId: string, input: unknown): BoothMessage | null {
+export function acceptMessage(roomId: string, input: unknown, translation?: Translation): BoothMessage | null {
   const room = getRoom(roomId);
   if (!room || !input || typeof input !== "object") return null;
   const record = input as Record<string, unknown>;
@@ -64,16 +64,16 @@ export function acceptMessage(roomId: string, input: unknown): BoothMessage | nu
   const existing = room.messages.find((message) => message.id === id);
   if (existing) return existing;
 
-  const translation = translate(original, characterId);
-  if (!translation.display) return null;
+  const line = translation?.display ? translation : translate(original, characterId);
+  if (!line.display) return null;
 
   const message: BoothMessage = {
     id,
     seat,
     characterId,
     original: original.slice(0, 500),
-    display: translation.display,
-    triggers: translation.triggers,
+    display: line.display,
+    triggers: line.triggers,
     createdAt: Date.now(),
   };
   room.messages.push(message);

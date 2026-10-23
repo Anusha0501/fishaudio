@@ -6,6 +6,7 @@ import {
   playBlob,
   publishMessage,
   pullMessages,
+  rewriteLine,
   speakLine,
   SpeakError,
   type Health,
@@ -14,7 +15,7 @@ import { getCharacter, listCharacters, PLAIN } from "./engine/characters";
 import { formatUsd } from "./engine/credits";
 import { DEMO_SCENE } from "./engine/scene";
 import { translate } from "./engine/translate";
-import type { BoothMessage, SeatId } from "./engine/types";
+import type { BoothMessage, SeatId, Translation } from "./engine/types";
 import { useMic } from "./useMic";
 
 const SPEND_KEY = "booth-spend";
@@ -57,7 +58,26 @@ export function App() {
   healthRef.current = health;
 
   const character = getCharacter(cast[seat]) ?? PLAIN;
-  const preview = useMemo(() => translate(draft, character.id), [draft, character.id]);
+  const localPreview = useMemo(() => translate(draft, character.id), [draft, character.id]);
+  const draftKey = `${character.id}\n${draft.trim()}`;
+  const [heard, setHeard] = useState<{ key: string; line: Translation & { source?: string } } | null>(null);
+
+  useEffect(() => {
+    const text = draft.trim();
+    if (!text) return;
+    let cancel = false;
+    const timer = window.setTimeout(() => {
+      void rewriteLine(text, character.id).then((line) => {
+        if (!cancel) setHeard({ key: `${character.id}\n${text}`, line });
+      });
+    }, 700);
+    return () => {
+      cancel = true;
+      window.clearTimeout(timer);
+    };
+  }, [draft, character.id]);
+
+  const preview = heard?.key === draftKey && heard.line.display ? heard.line : localPreview;
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("room");
@@ -163,6 +183,11 @@ export function App() {
         return next;
       });
       setVoiceVia("fish");
+      if (spoken.display && spoken.display !== message.display) {
+        setMessages((current) =>
+          current.map((item) => (item.id === message.id ? { ...item, display: spoken.display } : item)),
+        );
+      }
       await playBlob(spoken.blob);
     } catch (error) {
       const unconfigured = error instanceof SpeakError && error.code === "unconfigured";
@@ -190,8 +215,8 @@ export function App() {
 
   enqueueRef.current = enqueueVoice;
 
-  function deliver(text: string, from: SeatId, characterId: string): void {
-    const translation = translate(text, characterId);
+  async function deliver(text: string, from: SeatId, characterId: string): Promise<void> {
+    const translation = await rewriteLine(text, characterId);
     if (!translation.display) return;
     const message: BoothMessage = {
       id: crypto.randomUUID(),
@@ -232,10 +257,10 @@ export function App() {
     autoSend,
   });
 
-  function playScene(): void {
+  async function playScene(): Promise<void> {
     setCast({ you: "michael", them: "dwight" });
     setSeat("you");
-    for (const line of DEMO_SCENE) deliver(line.text, line.seat, line.characterId);
+    for (const line of DEMO_SCENE) await deliver(line.text, line.seat, line.characterId);
   }
 
   function otherChairLink(): string {
@@ -329,9 +354,7 @@ export function App() {
           <details className="budget">
             <summary>Architecture</summary>
             <p>
-              The browser rewrites the line before anything is sent. Both chairs share that
-              transcript through the room API. Speak calls Fish Audio on the server, which keeps
-              the key and caches the audio.
+              The browser shows a first draft. Gemini rewrites the line on the server when a key is set, and the built-in rules remain if it does not answer. Both chairs share that transcript through the room API. Speak calls Fish Audio on the server, which keeps the key and caches the audio.
             </p>
           </details>
           <p className="credit">
@@ -407,7 +430,7 @@ export function App() {
             }}
           >
             <div className="preview" aria-live="polite">
-              <span>They hear</span>
+              <span>{heard?.key === draftKey && heard.line.source === "gemini" ? "They hear · Gemini" : "They hear"}</span>
               <p>{preview.display || "Your line will land here, in character, before anyone is charged a sound."}</p>
               {preview.triggers.map((hit) => (
                 <em key={hit.id} className="chip">

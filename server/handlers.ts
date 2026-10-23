@@ -1,12 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getCharacter } from "../src/engine/characters.ts";
 import { usdPerMillionBytes } from "../src/engine/credits.ts";
-import { translate } from "../src/engine/translate.ts";
-import { fishKey, fishModel } from "./env.ts";
+import { fishKey, fishModel, geminiKey } from "./env.ts";
 import { acceptMessage, createRoom, getRoom, messagesAfter } from "./rooms.ts";
+import { rewriteLine } from "./rewrite.ts";
 import { FishError, synthesize } from "./tts.ts";
 
 const recentSpeaks = new Map<string, number[]>();
+const recentRewrites = new Map<string, number[]>();
 const ROOM_ID = /^[a-z0-9-]{6,40}$/;
 
 export type ApiRequest = IncomingMessage & {
@@ -70,16 +71,20 @@ function queryValue(req: ApiRequest, name: string): string {
   return value ?? "";
 }
 
-function tooManySpeaks(ip: string): boolean {
+function tooMany(ip: string, bucket: Map<string, number[]>, limit: number): boolean {
   const now = Date.now();
-  const window = (recentSpeaks.get(ip) ?? []).filter((stamp) => now - stamp < 60_000);
-  if (window.length >= 20) {
-    recentSpeaks.set(ip, window);
+  const window = (bucket.get(ip) ?? []).filter((stamp) => now - stamp < 60_000);
+  if (window.length >= limit) {
+    bucket.set(ip, window);
     return true;
   }
   window.push(now);
-  recentSpeaks.set(ip, window);
+  bucket.set(ip, window);
   return false;
+}
+
+function tooManySpeaks(ip: string): boolean {
+  return tooMany(ip, recentSpeaks, 20);
 }
 
 export function sendHealth(_req: ApiRequest, res: ApiResponse): void {
@@ -88,6 +93,7 @@ export function sendHealth(_req: ApiRequest, res: ApiResponse): void {
     configured: Boolean(fishKey()),
     model,
     pricePerMillionBytes: usdPerMillionBytes(model),
+    writer: geminiKey() ? "gemini" : "rules",
   });
 }
 
@@ -106,7 +112,7 @@ export async function sendSpeech(req: ApiRequest, res: ApiResponse): Promise<voi
     return;
   }
 
-  const line = translate(text, character.id);
+  const line = await rewriteLine(text, character.id);
   if (!line.performance) {
     replyJson(res, 400, { error: "That line was empty." });
     return;
@@ -131,6 +137,8 @@ export async function sendSpeech(req: ApiRequest, res: ApiResponse): Promise<voi
       "X-Booth-Model": model,
       "X-Booth-Bytes": String(spoken.bytes),
       "X-Booth-Usd": spoken.usd.toFixed(6),
+      "X-Booth-Display": encodeURIComponent(line.display),
+      "X-Booth-Writer": line.source,
     });
   } catch (error) {
     const status = error instanceof FishError ? error.status : 502;
@@ -138,6 +146,26 @@ export async function sendSpeech(req: ApiRequest, res: ApiResponse): Promise<voi
     const safeStatus = status === 401 || status === 402 || status === 429 ? status : 502;
     replyJson(res, safeStatus, { error: message });
   }
+}
+
+export async function sendRewrite(req: ApiRequest, res: ApiResponse): Promise<void> {
+  if (tooMany(clientIp(req), recentRewrites, 40)) {
+    replyJson(res, 429, { error: "The booth is catching its breath. Try again in a minute." });
+    return;
+  }
+  const body = readBody(req) as { text?: unknown; characterId?: unknown } | null;
+  const text = typeof body?.text === "string" ? body.text : "";
+  const characterId = typeof body?.characterId === "string" ? body.characterId : "";
+  if (!getCharacter(characterId)) {
+    replyJson(res, 400, { error: "Pick a character first." });
+    return;
+  }
+  const line = await rewriteLine(text, characterId);
+  if (!line.display) {
+    replyJson(res, 400, { error: "That line was empty." });
+    return;
+  }
+  replyJson(res, 200, line);
 }
 
 export function openRoom(_req: ApiRequest, res: ApiResponse): void {
@@ -159,7 +187,7 @@ export function readRoom(req: ApiRequest, res: ApiResponse): void {
   replyJson(res, 200, { id: room.id, messages: messagesAfter(room, queryValue(req, "after")) });
 }
 
-export function postRoomMessage(req: ApiRequest, res: ApiResponse): void {
+export async function postRoomMessage(req: ApiRequest, res: ApiResponse): Promise<void> {
   const id = queryValue(req, "id");
   if (!ROOM_ID.test(id)) {
     replyJson(res, 400, { error: "That room name is not one of ours." });
@@ -169,7 +197,11 @@ export function postRoomMessage(req: ApiRequest, res: ApiResponse): void {
     replyJson(res, 404, { error: "That booth has closed." });
     return;
   }
-  const message = acceptMessage(id, readBody(req));
+  const body = readBody(req) as { original?: unknown; characterId?: unknown } | null;
+  const original = typeof body?.original === "string" ? body.original : "";
+  const characterId = typeof body?.characterId === "string" ? body.characterId : "";
+  const line = getCharacter(characterId) ? await rewriteLine(original, characterId) : undefined;
+  const message = acceptMessage(id, body, line);
   if (!message) {
     replyJson(res, 400, { error: "That line could not be taken." });
     return;

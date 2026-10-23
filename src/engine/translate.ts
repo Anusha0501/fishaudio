@@ -233,6 +233,25 @@ const STYLES: Record<string, (text: string) => Styled> = {
   plain: stylePlain,
 };
 
+/** Drama 3 directions around a finished spoken line. The line itself is not rewritten here. */
+export function stageLine(characterId: string, display: string): string {
+  const character = getCharacter(characterId);
+  const id = character?.id ?? "plain";
+  const signature = character?.signature ?? "";
+  if (id === "plain" || !display) return display;
+  const bare = (value: string) => value.toLowerCase().replace(/[.!?,]+$/g, "").trim();
+  const signatureBare = bare(signature);
+  const displayBare = bare(display);
+  if (signatureBare && displayBare.endsWith(signatureBare)) {
+    const cut = displayBare.lastIndexOf(signatureBare);
+    const body = display.slice(0, cut).trim().replace(/[.!?,]+$/g, "");
+    const joke = signatureBare === "that's what she said";
+    const hit: TriggerHit = { id: joke ? "joke" : "closer", label: signature, phrase: signature };
+    return script(id, body || display, signature, hit);
+  }
+  return script(id, display, null, null);
+}
+
 export function translate(raw: string, characterId: string): Translation {
   const guarded = guard(raw);
   if (!guarded) return { display: "", performance: "", triggers: [] };

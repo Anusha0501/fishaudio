@@ -2,7 +2,7 @@ import path from "node:path";
 import express from "express";
 import { estimateUsd } from "../src/engine/credits.ts";
 import { fishKey, fishModel, loadEnv } from "./env.ts";
-import { openRoom, postRoomMessage, readRoom, sendHealth, sendSpeech, type ApiRequest } from "./handlers.ts";
+import { openRoom, postRoomMessage, readRoom, sendHealth, sendRewrite, sendSpeech, type ApiRequest } from "./handlers.ts";
 
 loadEnv();
 
@@ -27,6 +27,10 @@ app.post("/api/speak", (req, res) => {
   void sendSpeech(asApi(req), res);
 });
 
+app.post("/api/rewrite", (req, res) => {
+  void sendRewrite(asApi(req), res);
+});
+
 app.post("/api/rooms", (req, res) => {
   openRoom(asApi(req), res);
 });
@@ -40,7 +44,7 @@ app.get("/api/rooms/:id", (req, res) => {
 app.post("/api/rooms/:id/messages", (req, res) => {
   const api = asApi(req);
   api.query = { ...api.query, id: req.params.id };
-  postRoomMessage(api, res);
+  void postRoomMessage(api, res);
 });
 
 const port = Number(process.env.PORT || 5173);
