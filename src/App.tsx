@@ -354,7 +354,7 @@ export function App() {
           <details className="budget">
             <summary>Architecture</summary>
             <p>
-              The browser shows a first draft. Groq rewrites the line on the server when a key is set. Gemini is the backup writer, and the built-in rules remain if neither answers. Both chairs share that transcript through the room API. Speak calls Fish Audio on the server, which keeps the key and caches the audio.
+              The browser shows a first draft. The server rewrites the line in character before anyone hears it, and the built-in rules remain if that rewrite does not answer. Both chairs share that transcript through the room API. Speak calls Fish Audio on the server, which keeps the key and caches the audio.
             </p>
           </details>
           <p className="credit">
@@ -430,13 +430,7 @@ export function App() {
             }}
           >
             <div className="preview" aria-live="polite">
-              <span>
-                {heard?.key === draftKey && heard.line.source === "groq"
-                  ? "They hear · Groq"
-                  : heard?.key === draftKey && heard.line.source === "gemini"
-                    ? "They hear · Gemini"
-                    : "They hear"}
-              </span>
+              <span>They hear</span>
               <p>{preview.display || "Your line will land here, in character, before anyone is charged a sound."}</p>
               {preview.triggers.map((hit) => (
                 <em key={hit.id} className="chip">
